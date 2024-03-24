@@ -28,28 +28,24 @@ function IsGroundInSunlight()
 	return false
 end
 
--- Update the sun direction based on the time of day
-game.Lighting:GetPropertyChangedSignal("TimeOfDay"):Connect(function()
-	sunDirection = game.Lighting:GetSunDirection()
-end)
+-- Periodically check if the player is in sunlight and on the ground in sunlight
+while true do
+	wait(checkInterval)
+	local isDirectSunlight = not workspace:FindPartOnRay(
+	Ray.new(character.HumanoidRootPart.Position, sunDirection * 1000), character)
+	local isGroundInSunlight = IsGroundInSunlight()
 
-
-function Safe()
-	if burning == true then
-		burning = false
+	if isDirectSunlight and isGroundInSunlight then
+		-- If the player has been exposed for longer than the threshold, burn them
+		if tick() - lastSafeTime >= exposureThreshold then
+			BurnPlayer()
+		end
+	else
+		lastSafeTime = tick() -- Reset the timer if safe
 	end
 end
 
-game:GetService("RunService"):BindToRenderStep("SunService", Enum.RenderPriority.Camera.Value + 1, function(deltaTime)
-	local ray = Ray.new(character.HumanoidRootPart.Position, sunDirection * sun_Detect)
-	local partFound = workspace:FindPartOnRay(ray, character)
-
-	if partFound then
-		safe = true
-		Safe()
-		print("This player is safe")
-	else
-		safe = false
-		BurnPlayer()
-	end
+-- Update the sun direction based on the time of day
+game.Lighting:GetPropertyChangedSignal("TimeOfDay"):Connect(function()
+	sunDirection = game.Lighting:GetSunDirection()
 end)
